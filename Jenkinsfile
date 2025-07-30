@@ -40,22 +40,21 @@ pipeline {
         stage('🚀 PM2 Restart Server + Client') {
             steps {
                 sh '''
-                # Backend
-                pm2 describe chat_server > /dev/null
-                if [ $? -eq 0 ]; then
+                # Restart Backend
+                if pm2 describe chat_server > /dev/null; then
                     pm2 restart chat_server
                 else
                     pm2 start server/index.js --name chat_server
                 fi
 
-                # Frontend
-                pm2 describe react_client > /dev/null
-                if [ $? -eq 0 ]; then
+                # Restart Frontend
+                if pm2 describe react_client > /dev/null; then
                     pm2 restart react_client
                 else
                     pm2 start "npx serve -s client/build" --name react_client
                 fi
 
+                # Save PM2 process list
                 pm2 save
                 '''
             }
