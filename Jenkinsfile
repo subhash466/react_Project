@@ -43,11 +43,11 @@ pipeline {
             steps {
                 sh '''
                 # Start/Restart Backend using npm start
-                pm2 describe chat_server > /dev/null || true 
+                pm2 describe chat_server1 > /dev/null || true 
                 if [ $? -eq 0 ]; then
-                    pm2 restart chat_server
+                    pm2 restart chat_server1
                 else
-                    pm2 start "npm start" --name chat_server --cwd server
+                    pm2 start "npm start" --name chat_server1 --cwd server
                 fi
 
                 # Start/Restart Frontend using local serve
