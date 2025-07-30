@@ -4,7 +4,7 @@ pipeline {
     environment {
         CLIENT_DIR = 'client'
         SERVER_DIR = 'server'
-        CI = 'false' // Prevent React treating warnings as errors
+        CI = 'false'
     }
 
     stages {
@@ -33,6 +33,7 @@ pipeline {
             steps {
                 dir("${CLIENT_DIR}") {
                     sh 'npm install'
+                    sh 'npm install serve'  // ✅ Local install
                     sh 'npm run build'
                 }
             }
@@ -41,31 +42,23 @@ pipeline {
         stage('🚀 PM2 Restart Server + Client') {
             steps {
                 sh '''
-                # Install serve globally if not found
-                if ! command -v serve &> /dev/null
-                then
-                    echo "🔧 Installing serve globally..."
-                    npm install -g serve
-                fi
-
                 # Start/Restart Backend
                 pm2 describe chat_server > /dev/null
                 if [ $? -eq 0 ]; then
-                    echo "🔁 Restarting backend..."
                     pm2 restart chat_server
                 else
-                    echo "🚀 Starting backend..."
                     pm2 start server/index.js --name chat_server
                 fi
 
-                # Start/Restart Frontend
+                # Start/Restart Frontend using local "serve"
+                FRONTEND_SERVE="./client/node_modules/.bin/serve"
+
                 pm2 describe react_client > /dev/null
                 if [ $? -eq 0 ]; then
-                    echo "🔁 Restarting frontend..."
                     pm2 restart react_client
                 else
-                    echo "🚀 Starting frontend..."
-                    pm2 start "serve -s client/build -l 5000" --name react_client
+                    $FRONTEND_SERVE -s client/build -l 5000 &
+                    pm2 start $FRONTEND_SERVE --name react_client -- start -s client/build -l 5000
                 fi
 
                 pm2 save
@@ -83,3 +76,4 @@ pipeline {
         }
     }
 }
+
