@@ -43,7 +43,7 @@ pipeline {
             steps {
                 sh '''
                 # Start/Restart Backend using npm start
-                pm2 describe chat_server > /dev/null
+                pm2 describe chat_server > /dev/null || true 
                 if [ $? -eq 0 ]; then
                     pm2 restart chat_server
                 else
@@ -51,7 +51,7 @@ pipeline {
                 fi
 
                 # Start/Restart Frontend using local serve
-                pm2 describe react_client > /dev/null
+                pm2 describe react_client > /dev/null || true
                 if [ $? -eq 0 ]; then
                     pm2 restart react_client
                 else
