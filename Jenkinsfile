@@ -40,21 +40,22 @@ pipeline {
         stage('🚀 PM2 Restart Server + Client') {
             steps {
                 sh '''
-                # Restart Backend
-                if pm2 describe chat_server > /dev/null; then
+                # Start/Restart Backend
+                pm2 describe chat_server > /dev/null
+                if [ $? -eq 0 ]; then
                     pm2 restart chat_server
                 else
                     pm2 start server/index.js --name chat_server
                 fi
 
-                # Restart Frontend
-                if pm2 describe react_client > /dev/null; then
+                # Start/Restart Frontend
+                pm2 describe react_client > /dev/null
+                if [ $? -eq 0 ]; then
                     pm2 restart react_client
                 else
-                    pm2 start "npx serve -s client/build" --name react_client
+                    pm2 start "serve -s client/build -l 5000" --name react_client
                 fi
 
-                # Save PM2 process list
                 pm2 save
                 '''
             }
@@ -63,10 +64,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Chat app deployed!'
+            echo '✅ Deployed Successfully!'
         }
         failure {
-            echo '❌ Build failed — check logs.'
+            echo '❌ Deployment Failed. Check logs.'
         }
     }
 }
