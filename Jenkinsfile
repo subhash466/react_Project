@@ -33,7 +33,7 @@ pipeline {
             steps {
                 dir("${CLIENT_DIR}") {
                     sh 'npm install'
-                    sh 'npm install serve'  // 🔧 Install serve locally
+                    sh 'npm install serve'
                     sh 'npm run build'
                 }
             }
@@ -42,15 +42,15 @@ pipeline {
         stage('🚀 PM2 Restart Server + Client') {
             steps {
                 sh '''
-                # Start/Restart Backend
+                # Start/Restart Backend using npm start
                 pm2 describe chat_server > /dev/null
                 if [ $? -eq 0 ]; then
                     pm2 restart chat_server
                 else
-                    pm2 start server/index.js --name chat_server
+                    pm2 start "npm start" --name chat_server --cwd server
                 fi
 
-                # Start/Restart Frontend (use local serve)
+                # Start/Restart Frontend using local serve
                 pm2 describe react_client > /dev/null
                 if [ $? -eq 0 ]; then
                     pm2 restart react_client
@@ -73,3 +73,4 @@ pipeline {
         }
     }
 }
+
