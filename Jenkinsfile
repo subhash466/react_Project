@@ -33,7 +33,7 @@ pipeline {
             steps {
                 dir("${CLIENT_DIR}") {
                     sh 'npm install'
-                    sh 'npm install serve'  // ✅ Local install
+                    sh 'npm install serve'  // 🔧 Install serve locally
                     sh 'npm run build'
                 }
             }
@@ -50,15 +50,12 @@ pipeline {
                     pm2 start server/index.js --name chat_server
                 fi
 
-                # Start/Restart Frontend using local "serve"
-                FRONTEND_SERVE="./client/node_modules/.bin/serve"
-
+                # Start/Restart Frontend (use local serve)
                 pm2 describe react_client > /dev/null
                 if [ $? -eq 0 ]; then
                     pm2 restart react_client
                 else
-                    $FRONTEND_SERVE -s client/build -l 5000 &
-                    pm2 start $FRONTEND_SERVE --name react_client -- start -s client/build -l 5000
+                    pm2 start "./client/node_modules/.bin/serve -s client/build -l 5000" --name react_client
                 fi
 
                 pm2 save
@@ -76,4 +73,3 @@ pipeline {
         }
     }
 }
-
