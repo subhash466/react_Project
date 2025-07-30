@@ -4,6 +4,7 @@ pipeline {
     environment {
         CLIENT_DIR = 'client'
         SERVER_DIR = 'server'
+        CI = 'false'
     }
 
     stages {
