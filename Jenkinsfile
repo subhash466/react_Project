@@ -48,8 +48,8 @@ pipeline {
         stage('🚀 Deploy React App') {
             steps {
                 script {
-                    sh "rm -rf ${CLIENT_DEPLOY_DIR}/*"
-                    sh "cp -r ${CLIENT_DIR}/build/* ${CLIENT_DEPLOY_DIR}/"
+                    sh "sudo rm -rf ${CLIENT_DEPLOY_DIR}/*"
+                    sh "sudo cp -r ${CLIENT_DIR}/build/* ${CLIENT_DEPLOY_DIR}/"
                 }
             }
         }
