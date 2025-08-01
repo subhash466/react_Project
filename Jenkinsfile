@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        NODE_HOME = '/usr/bin'       // Node path
-        PM2_HOME = '/home/sm/.pm2'   // PM2 user home
+        NODE_HOME = '/usr/bin'
+        PM2_HOME = '/home/sm/.pm2'
         PATH = "${NODE_HOME}:${PATH}"
         REPO_URL = 'https://github.com/subhash466/react_Project.git'
         GIT_CREDENTIALS = 'my_tocken'
@@ -16,7 +16,7 @@ pipeline {
             }
         }
 
-        stage('📦 Install Dependencies (Client)') {
+        stage('📦 Install Client Dependencies') {
             steps {
                 dir('client') {
                     sh 'npm install'
@@ -41,7 +41,7 @@ pipeline {
             }
         }
 
-        stage('📦 Install Dependencies (Server)') {
+        stage('📦 Install Server Dependencies') {
             steps {
                 dir('server') {
                     sh 'npm install'
@@ -49,12 +49,12 @@ pipeline {
             }
         }
 
-        stage('🔁 Restart Backend with PM2') {
+        stage('🔁 Restart Backend using PM2') {
             steps {
                 dir('server') {
                     sh '''
                         export PM2_HOME=/home/sm/.pm2
-                        /usr/local/bin/pm2 delete all || true
+                        /usr/local/bin/pm2 delete backend-app || true
                         /usr/local/bin/pm2 start index.js --name backend-app
                     '''
                 }
@@ -63,11 +63,11 @@ pipeline {
     }
 
     post {
-        failure {
-            echo '❌ Deployment failed.'
-        }
         success {
-            echo '✅ Deployment successful!'
+            echo '✅ Monorepo deployment (Client + Server) successful!'
+        }
+        failure {
+            echo '❌ Deployment failed. Check logs.'
         }
     }
 }
