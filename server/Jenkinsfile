@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    environment {
+        NODE_ENV = 'production'
+    }
+
+    stages {
+        stage('📥 Checkout Code') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/subhash466/react_Project.git',
+                        credentialsId: 'my_tocken'
+                    ]]
+                ])
+            }
+        }
+
+        stage('📦 Install Dependencies') {
+            steps {
+                dir('server') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('🚀 Start Server') {
+            steps {
+                dir('server') {
+                    sh 'pm2 restart server-app || pm2 start index.js --name server-app'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Node.js backend deployed!'
+        }
+        failure {
+            echo '❌ Backend build/deploy failed.'
+        }
+    }
+}
