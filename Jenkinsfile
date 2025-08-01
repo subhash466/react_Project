@@ -2,10 +2,13 @@ pipeline {
     agent any
 
     environment {
-        NODE_ENV = 'production'
+        PM2_HOME = "/home/sm/.pm2"   // 👈 Set PM2_HOME to sm user path
+        CLIENT_DIR = "client"
+        SERVER_DIR = "server"
     }
 
     stages {
+
         stage('📥 Checkout Code') {
             steps {
                 checkout([
@@ -19,9 +22,9 @@ pipeline {
             }
         }
 
-        stage('📦 Install Frontend Dependencies') {
+        stage('📦 Install Client Dependencies') {
             steps {
-                dir('client') {
+                dir("${CLIENT_DIR}") {
                     sh 'npm install'
                 }
             }
@@ -29,39 +32,49 @@ pipeline {
 
         stage('🛠️ Build React App') {
             steps {
-                dir('client') {
+                dir("${CLIENT_DIR}") {
                     sh 'CI=false npm run build'
                 }
             }
         }
 
-        stage('📦 Install Backend Dependencies') {
+        stage('🚀 Deploy React App') {
             steps {
-                dir('server') {
+                sh '''
+                    sudo rm -rf /var/www/html/* || true
+                    sudo cp -r ${CLIENT_DIR}/build/* /var/www/html/
+                '''
+            }
+        }
+
+        stage('📦 Install Server Dependencies') {
+            steps {
+                dir("${SERVER_DIR}") {
                     sh 'npm install'
                 }
             }
         }
 
-        stage('🚀 Start Backend via PM2') {
+        stage('🧠 Start Backend with PM2') {
             steps {
-                dir('server') {
+                dir("${SERVER_DIR}") {
                     sh '''
                         pm2 delete all || true
-                        pm2 start index.js --name backend-app --update-env
+                        pm2 start index.js --name backend-app
                         pm2 save
                     '''
                 }
             }
         }
+
     }
 
     post {
         success {
-            echo '✅ CI/CD pipeline ran successfully.'
+            echo '✅ Deployment completed successfully.'
         }
         failure {
-            echo '❌ CI/CD pipeline failed.'
+            echo '❌ Deployment failed.'
         }
     }
 }
