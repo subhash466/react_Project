@@ -1,77 +1,73 @@
-def CLIENT_CHANGED = false
-def SERVER_CHANGED = false
-
 pipeline {
     agent any
 
     environment {
-        REACT_BUILD_DIR = 'client/build'
-        DEPLOY_DIR = '/var/www/html' // Change this if needed
+        REPO_URL = 'https://github.com/subhash466/react_Project.git'
+        BRANCH = 'main'
+        CREDENTIALS_ID = 'my_tocken'
+
+        CLIENT_DIR = 'client'
+        SERVER_DIR = 'server'
+
+        CLIENT_DEPLOY_DIR = '/var/www/html'
+        SERVER_PORT = '5000'
     }
 
     stages {
-
-        stage('🔍 Check Changed Folders') {
+        stage('📥 Checkout Code') {
             steps {
-                script {
-                    def changeLog = sh(
-                        script: 'git diff --name-only HEAD~1 HEAD',
-                        returnStdout: true
-                    ).trim()
-                    
-                    CLIENT_CHANGED = changeLog.contains('client/')
-                    SERVER_CHANGED = changeLog.contains('server/')
-                    
-                    echo "Client Changed: ${CLIENT_CHANGED}"
-                    echo "Server Changed: ${SERVER_CHANGED}"
-                }
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${BRANCH}"]],
+                    userRemoteConfigs: [[
+                        url: "${REPO_URL}",
+                        credentialsId: "${CREDENTIALS_ID}"
+                    ]]
+                ])
             }
         }
 
-        // -------- CLIENT --------
-
-        stage('📦 Install Client Dependencies') {
-            when { expression { CLIENT_CHANGED } }
+        // === FRONTEND STAGES ===
+        stage('📦 Install Frontend Dependencies') {
             steps {
-                dir('client') {
+                dir("${CLIENT_DIR}") {
                     sh 'npm install'
                 }
             }
         }
 
         stage('⚙️ Build React App') {
-            when { expression { CLIENT_CHANGED } }
             steps {
-                dir('client') {
-                    sh 'npm run build'
+                dir("${CLIENT_DIR}") {
+                    // Avoid CI=true issues
+                    sh 'CI=false npm run build'
                 }
             }
         }
 
         stage('🚀 Deploy React App') {
-            when { expression { CLIENT_CHANGED } }
             steps {
-                sh 'rm -rf ${DEPLOY_DIR}/*'
-                sh 'cp -r ${REACT_BUILD_DIR}/* ${DEPLOY_DIR}/'
+                script {
+                    sh "rm -rf ${CLIENT_DEPLOY_DIR}/*"
+                    sh "cp -r ${CLIENT_DIR}/build/* ${CLIENT_DEPLOY_DIR}/"
+                }
             }
         }
 
-        // -------- SERVER --------
-
-        stage('📦 Install Server Dependencies') {
-            when { expression { SERVER_CHANGED } }
+        // === BACKEND STAGES ===
+        stage('📦 Install Backend Dependencies') {
             steps {
-                dir('server') {
+                dir("${SERVER_DIR}") {
                     sh 'npm install'
                 }
             }
         }
 
-        stage('🚀 Start/Restart Node Server') {
-            when { expression { SERVER_CHANGED } }
+        stage('🚀 Start Backend Server with PM2') {
             steps {
-                dir('server') {
-                    sh 'pm2 restart server-app || pm2 start index.js --name server-app'
+                dir("${SERVER_DIR}") {
+                    sh 'pm2 delete all || true' // Clear old process
+                    sh 'pm2 start index.js --name backend-app'
                 }
             }
         }
@@ -79,10 +75,10 @@ pipeline {
 
     post {
         success {
-            echo '🎉 Deployment Success!'
+            echo "✅ Client and Server deployed successfully!"
         }
         failure {
-            echo '💥 Build or Deployment Failed!'
+            echo "❌ Build or Deploy failed!"
         }
     }
 }
